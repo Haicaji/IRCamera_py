@@ -36,6 +36,10 @@ class IRCameraApp:
         self.btn_filter = None
         self.btn_color = None
         self.btn_device = None
+        self.btn_mirror = None
+
+        # 显示选项
+        self.is_mirror = False
     
     def _setup_ui(self):
         """设置 UI 组件"""
@@ -55,6 +59,8 @@ class IRCameraApp:
         self.btn_record = self.control_panel.add_button("Record", self._on_record)
         self.btn_filter = self.control_panel.add_button("Filter: OFF", self._on_filter)
         self.btn_color = self.control_panel.add_button("Color: OFF", self._on_color)
+        # 镜像切换按钮
+        self.btn_mirror = self.control_panel.add_button("Mirror: OFF", self._on_mirror)
         
         # 设备切换按钮（多设备时显示在第二行）
         if has_multi_devices:
@@ -81,6 +87,8 @@ class IRCameraApp:
             names = self.controller.get_device_names()
             idx = self.controller.current_device_index
             self.btn_device.text = f"Device: {names[idx]}"
+        if self.btn_mirror:
+            self.btn_mirror.text = "Mirror: ON" if self.is_mirror else "Mirror: OFF"
     
     # ==================== 事件处理 ====================
     
@@ -120,6 +128,12 @@ class IRCameraApp:
         
         names = self.controller.get_device_names()
         self.control_panel.set_status(f"Device: {names[next_idx]}")
+
+    def _on_mirror(self):
+        """切换镜像显示"""
+        self.is_mirror = not self.is_mirror
+        state = "ON" if self.is_mirror else "OFF"
+        self.control_panel.set_status(f"Mirror: {state}")
     
     def _on_mouse(self, event, x, y, flags, param):
         """鼠标事件回调"""
@@ -134,6 +148,12 @@ class IRCameraApp:
         display = np.zeros((self.window_height, self.window_width, 4), dtype=np.uint8)
         
         if frame is not None:
+            # 镜像处理（水平翻转）
+            if self.is_mirror:
+                try:
+                    frame = cv2.flip(frame, 1)
+                except Exception:
+                    pass
             # 调整帧大小
             frame_height = self.window_height - Layout.CONTROL_PANEL_HEIGHT
             frame_resized = cv2.resize(frame, (self.window_width, frame_height))
