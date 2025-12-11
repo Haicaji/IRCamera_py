@@ -37,9 +37,11 @@ class IRCameraApp:
         self.btn_color = None
         self.btn_device = None
         self.btn_mirror = None
+        self.btn_camera = None
 
         # 显示选项
         self.is_mirror = False
+        self.is_camera_paused = False  # 摄像头暂停状态
     
     def _setup_ui(self):
         """设置 UI 组件"""
@@ -57,10 +59,12 @@ class IRCameraApp:
         # 第一行按钮
         self.control_panel.add_button("Photo", self._on_photo)
         self.btn_record = self.control_panel.add_button("Record", self._on_record)
-        self.btn_filter = self.control_panel.add_button("Filter: OFF", self._on_filter)
-        self.btn_color = self.control_panel.add_button("Color: OFF", self._on_color)
+        self.btn_filter = self.control_panel.add_button("Filter", self._on_filter)
+        self.btn_color = self.control_panel.add_button("Color", self._on_color)
         # 镜像切换按钮
-        self.btn_mirror = self.control_panel.add_button("Mirror: OFF", self._on_mirror)
+        self.btn_mirror = self.control_panel.add_button("Mirror", self._on_mirror)
+        # 摄像头开关按钮
+        self.btn_camera = self.control_panel.add_button("Cam ON", self._on_camera)
         
         # 设备切换按钮（多设备时显示在第二行）
         if has_multi_devices:
@@ -78,17 +82,19 @@ class IRCameraApp:
             self.btn_record.active = self.controller.is_recording
         
         if self.btn_filter:
-            self.btn_filter.text = f"Filter: {self.controller.frame_filter.display_name}"
+            self.btn_filter.text = f"F:{self.controller.frame_filter.display_name}"
         
         if self.btn_color:
-            self.btn_color.text = f"Color: {self.controller.mapping_mode.display_name}"
+            self.btn_color.text = f"C:{self.controller.mapping_mode.display_name}"
         
         if self.btn_device:
             names = self.controller.get_device_names()
             idx = self.controller.current_device_index
             self.btn_device.text = f"Device: {names[idx]}"
         if self.btn_mirror:
-            self.btn_mirror.text = "Mirror: ON" if self.is_mirror else "Mirror: OFF"
+            self.btn_mirror.text = "Mirror ON" if self.is_mirror else "Mirror"
+        if self.btn_camera:
+            self.btn_camera.text = "Cam OFF" if self.is_camera_paused else "Cam ON"
     
     # ==================== 事件处理 ====================
     
@@ -134,6 +140,19 @@ class IRCameraApp:
         self.is_mirror = not self.is_mirror
         state = "ON" if self.is_mirror else "OFF"
         self.control_panel.set_status(f"Mirror: {state}")
+
+    def _on_camera(self):
+        """切换摄像头开关（暂停/恢复）"""
+        if self.is_camera_paused:
+            # 恢复摄像头
+            self.loop.run_until_complete(self.controller.resume())
+            self.is_camera_paused = False
+            self.control_panel.set_status("Camera: ON")
+        else:
+            # 暂停摄像头
+            self.loop.run_until_complete(self.controller.pause())
+            self.is_camera_paused = True
+            self.control_panel.set_status("Camera: OFF")
     
     def _on_mouse(self, event, x, y, flags, param):
         """鼠标事件回调"""

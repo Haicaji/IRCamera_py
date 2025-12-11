@@ -115,8 +115,9 @@ class ControlPanel:
     def add_button(self, text: str, action: callable) -> Button:
         """添加按钮"""
         # 计算按钮位置
-        row = len(self.buttons) // 5
-        col = len(self.buttons) % 5
+        buttons_per_row = getattr(Layout, 'BUTTONS_PER_ROW', 6)
+        row = len(self.buttons) // buttons_per_row
+        col = len(self.buttons) % buttons_per_row
         
         x = Layout.BUTTON_MARGIN + col * (Layout.BUTTON_WIDTH + Layout.BUTTON_MARGIN)
         y = self.y_offset + Layout.BUTTON_MARGIN + row * (Layout.BUTTON_HEIGHT + Layout.BUTTON_MARGIN)
@@ -157,9 +158,9 @@ class ControlPanel:
         status_y = self.y_offset + self.height - 15
         self.status_bar.draw(img, 10, status_y)
         
-        # 绘制录像指示器
+        # 绘制录像指示器（在画面右上角）
         if is_recording:
-            self.recording_indicator.draw(img, self.width - 50, self.y_offset + 25)
+            self.recording_indicator.draw(img, self.width - 50, 25)
     
     def set_status(self, message: str):
         """设置状态消息"""

@@ -213,6 +213,16 @@ class IRCameraController:
         if self._media_capture is not None:
             self._media_capture = None
 
+    async def pause(self):
+        """暂停捕获（不关闭程序）"""
+        if self._frame_reader is not None:
+            await self._frame_reader.stop_async()
+
+    async def resume(self):
+        """恢复捕获"""
+        if self._frame_reader is not None:
+            await self._frame_reader.start_async()
+
     def get_frame(self):
         """获取最新帧"""
         try:
@@ -363,24 +373,33 @@ class IRCameraController:
         
         return filepath
 
-    def start_recording(self, save_dir: str = "videos", fps: int = 15) -> str:
+    def start_recording(self, save_dir: str = "videos", base_fps: int = 15) -> str:
         """开始录像，返回文件路径
         
         Args:
             save_dir: 保存目录
-            fps: 录像帧率，默认 15fps（红外摄像头通常帧率较低）
+            base_fps: 基础帧率，默认 15fps（红外摄像头无过滤时的帧率）
+                      当使用 RAW 或 ILLUMINATED 过滤时，帧率自动减半
         """
         if self._is_recording:
             return None
         
         os.makedirs(save_dir, exist_ok=True)
         
+        # 根据帧过滤模式调整帧率
+        # RAW 或 ILLUMINATED 模式下只保存一半的帧，所以帧率减半
+        if self._frame_filter == IRFrameFilter.NONE:
+            actual_fps = base_fps
+        else:
+            actual_fps = max(base_fps // 2, 7)  # 最低 7fps，避免太慢
+        
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self._video_path = os.path.join(save_dir, f"IR_Video_{timestamp}.avi")
+        filter_suffix = self._frame_filter.display_name
+        self._video_path = os.path.join(save_dir, f"IR_Video_{timestamp}_{filter_suffix}.avi")
         
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self._video_writer = cv2.VideoWriter(
-            self._video_path, fourcc, fps,
+            self._video_path, fourcc, actual_fps,
             (self._frame_width, self._frame_height)
         )
         

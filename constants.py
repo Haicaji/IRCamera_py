@@ -80,7 +80,8 @@ class Layout:
     CONTROL_PANEL_HEIGHT = 60  # 单行按钮高度
     CONTROL_PANEL_HEIGHT_2ROWS = 105  # 双行按钮高度
     BUTTON_HEIGHT = 35
-    BUTTON_WIDTH = 90
-    BUTTON_MARGIN = 8
+    BUTTON_WIDTH = 100  # 按钮宽度
+    BUTTON_MARGIN = 5   # 减小间距
+    BUTTONS_PER_ROW = 6  # 每行按钮数量
     MIN_WINDOW_WIDTH = 640
     STATUS_DISPLAY_TIME = 3  # 状态消息显示时间（秒）
